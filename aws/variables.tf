@@ -53,6 +53,7 @@ variable "database_subnet_cidrs" {
   default     = ["10.0.100.0/24", "10.0.200.0/24"]
 }
 
+
 # Compute Variables
 variable "web_instance_type" {
   description = "Instance type for web tier"
@@ -79,8 +80,21 @@ variable "app_instance_count" {
 }
 
 variable "key_pair_name" {
-  description = "Name of the AWS key pair for EC2 instances"
+  description = "Key pair name for EC2 instances"
   type        = string
+  default     = ""
+}
+
+variable "app_image" {
+  description = "The Docker image for the application."
+  type        = string
+  default     = "nginx:latest"
+}
+
+variable "app_port" {
+  description = "The port the application listens on."
+  type        = number
+  default     = 80
 }
 
 # Database Variables
@@ -143,4 +157,26 @@ variable "db_maintenance_window" {
   description = "Database maintenance window"
   type        = string
   default     = "sun:04:00-sun:05:00"
+}
+
+variable "vpc_id" {
+  description = "VPC ID where resources will be deployed"
+  type        = string
+}
+
+variable "subnet_ids" {
+  description = "Subnet IDs for resources"
+  type        = list(string)
+}
+
+variable "subnets" {
+  description = "Subnets for the EKS cluster"
+  type        = list(string)
+}
+
+variable "tags" {
+  description = "commom_tags"
+  type        = map(string)
+  default     = {}
+  
 }
