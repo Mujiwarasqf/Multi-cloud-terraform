@@ -117,7 +117,6 @@ resource "aws_security_group_rule" "web_to_node_http" {
   security_group_id        = aws_security_group.eks_node_sg.id
   source_security_group_id = var.web_security_group_id
   description              = "Allow HTTP from web SG to nodes"
-  count                    = var.web_security_group_id == "" ? 0 : 1
 }
 
 resource "aws_security_group_rule" "web_to_node_https" {
@@ -128,7 +127,6 @@ resource "aws_security_group_rule" "web_to_node_https" {
   security_group_id        = aws_security_group.eks_node_sg.id
   source_security_group_id = var.web_security_group_id
   description              = "Allow HTTPS from web SG to nodes"
-  count                    = var.web_security_group_id == "" ? 0 : 1
 }
 
 resource "aws_security_group_rule" "web_to_node_nodeport" {
@@ -139,7 +137,6 @@ resource "aws_security_group_rule" "web_to_node_nodeport" {
   security_group_id        = aws_security_group.eks_node_sg.id
   source_security_group_id = var.web_security_group_id
   description              = "Allow NodePort range from web SG to nodes"
-  count                    = var.web_security_group_id == "" ? 0 : 1
 }
 
 # App -> Node: allow app port(s) (default 8080)
@@ -151,7 +148,6 @@ resource "aws_security_group_rule" "app_to_node_appport" {
   security_group_id        = aws_security_group.eks_node_sg.id
   source_security_group_id = var.app_security_group_id
   description              = "Allow app SG to nodes on app port"
-  count                    = var.app_security_group_id == "" ? 0 : 1
 }
 
 # If you want the cluster control plane to allow traffic from your web/app SGs (e.g., if you use control-plane proxying)
@@ -163,7 +159,6 @@ resource "aws_security_group_rule" "web_to_cluster" {
   security_group_id        = aws_security_group.eks_cluster_sg.id
   source_security_group_id = var.web_security_group_id
   description              = "Allow HTTPS from web SG to cluster control plane"
-  count                    = var.web_security_group_id == "" ? 0 : 1
 }
 
 resource "aws_security_group_rule" "app_to_cluster" {
@@ -174,7 +169,6 @@ resource "aws_security_group_rule" "app_to_cluster" {
   security_group_id        = aws_security_group.eks_cluster_sg.id
   source_security_group_id = var.app_security_group_id
   description              = "Allow HTTPS from app SG to cluster control plane"
-  count                    = var.app_security_group_id == "" ? 0 : 1
 }
 
 # -- EKS Cluster --
@@ -232,3 +226,22 @@ resource "aws_eks_node_group" "managed_nodes" {
   ]
 }
 
+# Create OIDC provider for IRSA
+data "aws_eks_cluster" "this" {
+  name = aws_eks_cluster.this.name
+}
+
+data "aws_iam_openid_connect_provider" "maybe" {
+  count = 0
+  # This data is for conditional checks, keep for reference
+  url = data.aws_eks_cluster.this.identity[0].oidc[0].issuer
+}
+
+resource "aws_iam_openid_connect_provider" "eks" {
+  url = data.aws_eks_cluster.this.identity[0].oidc[0].issuer
+  client_id_list = ["sts.amazonaws.com"]
+  thumbprint_list = [
+    # AWS uses the common thumbprint; you can fetch this programmatically in pipelines.
+    "9e99a48a9960b14926bb7f3b02e22da0afd1f9d6"
+  ]
+}
